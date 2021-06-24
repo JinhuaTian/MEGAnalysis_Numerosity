@@ -28,7 +28,7 @@ jit(nopython=True,parallel=True) #nopython=True,parallel=True
 
 # basic info
 rootDir = '/nfs/s2/userhome/tianjinhua/workingdir/meg/numerosity'
-subjName = ['subj006']
+subjName = ['subj007']
 # 'subj002','subj003','subj004','subj005','subj006','subj007','subj008','subj009','subj010'
 
 scaler = StandardScaler()

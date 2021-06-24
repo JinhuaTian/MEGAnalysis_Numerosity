@@ -47,7 +47,7 @@ for x in range(80):
             else:
                 isRDM.append(1)
 
-subjs = ['2','3','4','5','6','8','9','10'] #'7',
+subjs = ['3','4','5','6','8','9','10'] # '4','5','6',  # '2','7',
 path =  r'C:\Users\tclem\Desktop\MEG'
 # make 4 dimension x 2 (r value and p value) empty matrix 
 subjNums, tps, RDM, fold, repeats = len(subjs), 80, 3200, 3, 100
@@ -60,7 +60,7 @@ RDMpIs = np.zeros((subjNums,tps))
 RDMcorrLLF = np.zeros((subjNums,tps))
 RDMpLLF = np.zeros((subjNums,tps))
 
-
+partial = True
 subjNum = 0
 for subj in subjs:
     fileName = 'MEGRDM3x100_subj'+ subj + '.npy'
@@ -77,9 +77,40 @@ for subj in subjs:
     for tp in range(tps):
         datatmp = data[tp,:] # subIndex,t,re,foldIndex,RDMindex 
         RDMtmp = np.average(data[tp,:,:,:], axis=(0, 1))
+        if partial == True:
+            pdData = pd.DataFrame({'respRDM':RDMtmp,'numRDM':numRDM,'fsRDM':fsRDM,'isRDM':isRDM,'LLFRDM':LLFRDM})
+            corr=pg.partial_corr(pdData,x='respRDM',y='numRDM',x_covar=['fsRDM','isRDM','LLFRDM'],tail='one-sided',method='spearman') 
+            RDMcorrNum[subjNum,tp] = corr['r']
+            RDMpNum[subjNum,tp] = corr['p-val']
         
-        pdData = pd.DataFrame({'respRDM':RDMtmp,'numRDM':numRDM,'fsRDM':fsRDM,'isRDM':isRDM,'LLFRDM':LLFRDM})
+            corr=pg.partial_corr(pdData,x='respRDM',y='fsRDM',x_covar=['numRDM','isRDM','LLFRDM'],tail='one-sided',method='spearman') 
+            RDMcorrFs[subjNum,tp] = corr['r']
+            RDMpFs[subjNum,tp] = corr['p-val']
+            
+            corr=pg.partial_corr(pdData,x='respRDM',y='isRDM',x_covar=['numRDM','fsRDM','LLFRDM'],tail='one-sided',method='spearman') 
+            RDMcorrIs[subjNum,tp] = corr['r']
+            RDMpIs[subjNum,tp] = corr['p-val']
+            
+            corr=pg.partial_corr(pdData,x='respRDM',y='LLFRDM',x_covar=['numRDM','fsRDM','isRDM'],tail='one-sided',method='spearman') 
+            RDMcorrLLF[subjNum,tp] = corr['r']
+            RDMpLLF[subjNum,tp] = corr['p-val']
+        elif partial == False:
+            corr=pg.corr(x=RDMtmp,y=numRDM,tail='two-sided',method='spearman') 
+            RDMcorrNum[subjNum,tp] = corr['r']
+            RDMpNum[subjNum,tp] = corr['p-val']
         
+            corr=pg.corr(x=RDMtmp,y=fsRDM,tail='two-sided',method='spearman') 
+            RDMcorrFs[subjNum,tp] = corr['r']
+            RDMpFs[subjNum,tp] = corr['p-val']
+            
+            corr=pg.corr(x=RDMtmp,y=isRDM,tail='two-sided',method='spearman') 
+            RDMcorrIs[subjNum,tp] = corr['r']
+            RDMpIs[subjNum,tp] = corr['p-val']
+            
+            corr=pg.corr(x=RDMtmp,y=LLFRDM,tail='two-sided',method='spearman') 
+            RDMcorrLLF[subjNum,tp] = corr['r']
+            RDMpLLF[subjNum,tp] = corr['p-val']
+        '''
         corr=pg.partial_corr(pdData,x='respRDM',y='numRDM',x_covar=['fsRDM','isRDM','LLFRDM'],tail='two-sided',method='spearman') 
         RDMcorrNum[subjNum,tp] = corr['r']
         RDMpNum[subjNum,tp] = corr['p-val']
@@ -95,19 +126,42 @@ for subj in subjs:
         corr=pg.partial_corr(pdData,x='respRDM',y='LLFRDM',x_covar=['numRDM','fsRDM','isRDM'],tail='two-sided',method='spearman') 
         RDMcorrLLF[subjNum,tp] = corr['r']
         RDMpLLF[subjNum,tp] = corr['p-val']
-    
+        '''
     subjNum = subjNum + 1
     del data
 
-# average cross different 
-corrAvgNum = np.average(RDMcorrNum,axis=0)
-pAvgNum = np.average(RDMpNum,axis=0)
-corrAvgFs = np.average(RDMcorrFs,axis=0)
-pAvgFs = np.average(RDMpFs,axis=0)
-corrAvgIs = np.average(RDMcorrIs,axis=0)
-pAvgIs = np.average(RDMpIs,axis=0)
-corrAvgLLF= np.average(RDMcorrLLF,axis=0)
-pAvgLLF = np.average(RDMpLLF,axis=0)
+from statsmodels.stats.multitest import fdrcorrection
+#fdrcorrection(pvals, alpha=0.05, method='indep', is_sorted=False)
+def fdr(x):
+    xx = fdrcorrection(x, alpha=0.05, method='indep', is_sorted=False)
+    return(xx)
+tps = 80 # time points = 80
+pAvgNum = np.zeros(tps)
+pAvgFs = np.zeros(tps)
+pAvgIs = np.zeros(tps)
+pAvgLLF = np.zeros(tps)
+
+FDRCorrected = True
+if FDRCorrected == True: # May not right
+    corrAvgNum = np.average(RDMcorrNum,axis=0)
+    corrAvgFs = np.average(RDMcorrFs,axis=0)
+    corrAvgIs = np.average(RDMcorrIs,axis=0)
+    corrAvgLLF= np.average(RDMcorrLLF,axis=0)
+    for tp in range(tps):
+        pAvgNum[tp] = np.average(fdr(RDMpNum[:,tp]))
+        pAvgFs[tp] = np.average(fdr(RDMpFs[:,tp]))
+        pAvgIs[tp] = np.average(fdr(RDMpIs[:,tp]))
+        pAvgLLF[tp] = np.average(fdr(RDMpLLF[:,tp]))
+elif FDRCorrected == False:
+    # average cross different 
+    corrAvgNum = np.average(RDMcorrNum,axis=0)
+    pAvgNum = np.average(RDMpNum,axis=0)
+    corrAvgFs = np.average(RDMcorrFs,axis=0)
+    pAvgFs = np.average(RDMpFs,axis=0)
+    corrAvgIs = np.average(RDMcorrIs,axis=0)
+    pAvgIs = np.average(RDMpIs,axis=0)
+    corrAvgLLF= np.average(RDMcorrLLF,axis=0)
+    pAvgLLF = np.average(RDMpLLF,axis=0)
 
 import matplotlib.pyplot as plt
 plt.plot(range(-10,tps-10),corrAvgNum,label='Number',color='brown')
@@ -116,12 +170,16 @@ plt.plot(range(-10,tps-10),corrAvgIs,label='Item size',color='forestgreen') #dar
 plt.plot(range(-10,tps-10),corrAvgLLF,label='low-level feature',color='black')
 # plot the significant line
 pAvgNum[(pAvgNum>0.05)] = None
+pAvgNum[corrAvgNum<0] = None
 pAvgNum[(pAvgNum<=0.05)] = -0.15
 pAvgFs[(pAvgFs>0.05)] = None
+pAvgFs[corrAvgFs<0] = None
 pAvgFs[(pAvgFs<=0.05)] = -0.17
 pAvgIs[(pAvgIs>0.05)] = None
+pAvgIs[corrAvgIs<0] = None
 pAvgIs[(pAvgIs<=0.05)] = -0.19
 pAvgLLF[(pAvgLLF>0.05)] = None
+pAvgLLF[corrAvgLLF<0] = None
 pAvgLLF[(pAvgLLF<=0.05)] = -0.21
 plt.plot(range(-10,tps-10),pAvgNum,color='brown')
 plt.plot(range(-10,tps-10),pAvgFs,color='mediumblue')
@@ -130,9 +188,14 @@ plt.plot(range(-10,tps-10),pAvgLLF,color='black')
 
 
 plt.xlabel('Time points(10ms)')
-plt.ylabel('Partial spearman correlation')
-# 'Time course of partial Spearman correlations between MEG RDMs and model RDMs(pvalue)'
-plt.title('Time course of partial Spearman correlations between MEG RDMs and model RDMs')
+if partial == True:
+    plt.ylabel('Partial spearman correlation')
+    # 'Time course of partial Spearman correlations between MEG RDMs and model RDMs(pvalue)'
+    plt.title('Time course of partial Spearman correlations between MEG RDMs and model RDMs')
+elif partial == False:
+    plt.ylabel('Spearman correlation')
+    # 'Time course of partial Spearman correlations between MEG RDMs and model RDMs(pvalue)'
+    plt.title('Time course of Spearman correlations between MEG RDMs and model RDMs')
 plt.legend()
 plt.show()
 
