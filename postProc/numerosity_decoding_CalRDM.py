@@ -19,12 +19,12 @@ import numpy as np
 import os
 from os.path import join as pj
 from sklearn.model_selection import StratifiedKFold
-#from sklearn.svm import SVC
+from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 import time
 import matplotlib
 matplotlib.use('Qt5Agg') #TkAgg
-from libsvm import svmutil as sv # pip install -U libsvm-official
+#from libsvm import svmutil as sv # pip install -U libsvm-official
 #import sys
 #sys.path.append('/nfs/a2/userhome/tianjinhua/workingdir/meg/mne/')
 import mne
@@ -36,9 +36,9 @@ from numba import jit
 jit(nopython=True,parallel=True) #nopython=True,parallel=True
 
 # basic info
-rootDir = '/home/jhtian/workingdir/meg2/'
+rootDir = 'D:/temp'
 #subjName = ['subj016']
-subjid = 'subj017'
+subjid = 'subj004'
 # 'subj002','subj003','subj004','subj005','subj006','subj007','subj008','subj009','subj010'
 
 newSamplingRate = 300
@@ -67,7 +67,7 @@ epochs_list = []
 for file in os.listdir(savePath):
     if 'filterEpochICAMR_' in file:
         fifpath = pj(savePath, file)
-        epoch = mne.read_epochs(fifpath, preload=True, verbose=True)
+        epoch = mne.read_epochs(fifpath, preload=False, verbose=True)
         epoch.info['dev_head_t'] = Transform('meg', 'head', np.identity(4)) # ctf use mag instead of meg
         epochs_list.append(epoch)
         del epoch
@@ -139,15 +139,17 @@ for t in range(nTime):
                         Pd1 = trainPd[(trainPd[:,0] == (x+1)) | (trainPd[:,0] == (y+1))] # labels are 1~80
                         Pd2 = testPd[(testPd[:,0] == (x+1)) | (testPd[:,0] == (y+1))]
                         # run svm
-                        '''
                         svm = SVC(kernel="linear")
                         svm.fit(Pd1[:,1:],Pd1[:,0])
                         acc = svm.score(Pd2[:,1:],Pd2[:,0]) # sub,time,RDMindex,fold,repeat # t,re,foldIndex,RDMindex
+                        # save acc
+                        accs[t, re, foldIndex, RDMindex] = acc
                         '''
                         model = sv.svm_train(Pd1[:,0],Pd1[:,1:], "-q -t 0")
                         _, p_acc, _ = sv.svm_predict(Pd2[:,0],Pd2[:,1:], model, "-q")#p_label, p_acc, p_val = 
                         # save acc
                         accs[t,re,foldIndex,RDMindex]=p_acc[0]
+                        '''
                         RDMindex = RDMindex + 1
             foldIndex = foldIndex + 1
     time_elapsed = time.time() - time0
