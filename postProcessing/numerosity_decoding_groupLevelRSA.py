@@ -4,33 +4,31 @@
 # compute partial Spearman correlation
 # https://pingouin-stats.org/generated/pingouin.partial_corr.html
 """
+
 import numpy as np
 #import pingouin as pg
 from pingouin import correlation as pg
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler,StandardScaler
 from os.path import join as pj
 
-# make stimulus RDM
-eventMatrix = np.array([[1,1,1,1],[1,1,1,2],[1,1,1,3],[1,1,1,4],[1,1,1,5],[1,1,1,6],[1,1,1,7],[1,1,1,8],[1,1,1,9],[1,1,1,10],
-                [1,1,2,11],[1,1,2,12],[1,1,2,13],[1,1,2,14],[1,1,2,15],[1,1,2,16],[1,1,2,17],[1,1,2,18],[1,1,2,19],[1,1,2,20],
-                [1,2,1,21],[1,2,1,22],[1,2,1,23],[1,2,1,24],[1,2,1,25],[1,2,1,26],[1,2,1,27],[1,2,1,28],[1,2,1,29],[1,2,1,30],
-                [1,2,2,31],[1,2,2,32],[1,2,2,33],[1,2,2,34],[1,2,2,35],[1,2,2,36],[1,2,2,37],[1,2,2,38],[1,2,2,39],[1,2,2,40],
-                [2,1,1,41],[2,1,1,42],[2,1,1,43],[2,1,1,44],[2,1,1,45],[2,1,1,46],[2,1,1,47],[2,1,1,48],[2,1,1,49],[2,1,1,50],
-                [2,1,2,51],[2,1,2,52],[2,1,2,53],[2,1,2,54],[2,1,2,55],[2,1,2,56],[2,1,2,57],[2,1,2,58],[2,1,2,59],[2,1,2,60],
-                [2,2,1,61],[2,2,1,62],[2,2,1,63],[2,2,1,64],[2,2,1,65],[2,2,1,66],[2,2,1,67],[2,2,1,68],[2,2,1,69],[2,2,1,70],
-                [2,2,2,71],[2,2,2,72],[2,2,2,73],[2,2,2,74],[2,2,2,75],[2,2,2,76],[2,2,2,77],[2,2,2,78],[2,2,2,79],[2,2,2,80]])
+# load stimulus RDM
+eventMatrix = np.loadtxt('C:/Users/tclem/Documents/GitHub/MEGAnalysis_Numerosity/postProcessing/STI.txt')
 
 # make correlation matrix
 index = 0
 numRDM = []
 fsRDM = []
 isRDM = []
-LLFRDM = np.load('C:/Users/tclem/Desktop/MEG/LowLevelMatrix.npy') # low-level features
+shapeRDM = []
+#LLFRDM = np.load('/nfs/a2/userhome/tianjinhua/workingdir/meg/LowLevelMatrix.npy') # low-level features
 
+cc = 0
+# compute model RDM
 for x in range(80):
     for y in range(80):
         if x != y and x + y < 80: #x + y < 80:
+            cc = cc+1
             # num RDM
             if eventMatrix[x,0] == eventMatrix[y,0]:
                 numRDM.append(0)
@@ -46,54 +44,60 @@ for x in range(80):
                 isRDM.append(0)
             else:
                 isRDM.append(1)
+            # shape RDM
+            if eventMatrix[x,3] == eventMatrix[y,3]:
+                shapeRDM.append(0)
+            else:
+                shapeRDM.append(1)
+        
 
-subjs = ['3','4','5','6','8','9','10'] # '4','5','6',  # '2','7',
-path =  r'C:\Users\tclem\Desktop\MEG'
+subjs = ['004','005','006','007','009','011','012','013','014','015','016','017','018','020','021','022','023'] # '2','3','4','5','6','8','9','10'
+path = 'E:/temp'
 # make 4 dimension x 2 (r value and p value) empty matrix 
-subjNums, tps, RDM, fold, repeats = len(subjs), 80, 3200, 3, 100
+subjNums, tps, RDM, fold, repeats = len(subjs), 240, 3200, 3, 100 # 3*80
 RDMcorrNum = np.zeros((subjNums,tps))
 RDMpNum = np.zeros((subjNums,tps))
 RDMcorrFs = np.zeros((subjNums,tps))
 RDMpFs = np.zeros((subjNums,tps))
 RDMcorrIs = np.zeros((subjNums,tps))
 RDMpIs = np.zeros((subjNums,tps))
-RDMcorrLLF = np.zeros((subjNums,tps))
-RDMpLLF = np.zeros((subjNums,tps))
+RDMcorrShape = np.zeros((subjNums,tps))
+RDMpShape = np.zeros((subjNums,tps))
 
 partial = True
 subjNum = 0
 for subj in subjs:
-    fileName = 'MEGRDM3x100_subj'+ subj + '.npy'
+    fileName = 'ctfRDM3x100x300hz_subj'+ subj + '.npy'
     filePath = pj(path, fileName)
     # compute partial spearman correlation, with other 2 RDM controlled 
     data = np.load(filePath) # subIndex,t,re,foldIndex,RDMindex 
-    subIndex,t,re,foldIndex,RDMindex = data.shape
-    data = data.reshape(subIndex*t*re*foldIndex,RDMindex)
+    t,re,foldIndex,RDMindex = data.shape
+    data = data.reshape(t*re*foldIndex,RDMindex)
     # normalize the MEG RDM to [0,1]
-    min_max_scaler = MinMaxScaler()
-    data = min_max_scaler.fit_transform(data)
+    scaler = StandardScaler()
+    data = scaler.fit_transform(data)
     data = data.reshape(t,re,foldIndex,RDMindex)
     
     for tp in range(tps):
         datatmp = data[tp,:] # subIndex,t,re,foldIndex,RDMindex 
         RDMtmp = np.average(data[tp,:,:,:], axis=(0, 1))
         if partial == True:
-            pdData = pd.DataFrame({'respRDM':RDMtmp,'numRDM':numRDM,'fsRDM':fsRDM,'isRDM':isRDM,'LLFRDM':LLFRDM})
-            corr=pg.partial_corr(pdData,x='respRDM',y='numRDM',x_covar=['fsRDM','isRDM','LLFRDM'],tail='one-sided',method='spearman') 
+            pdData = pd.DataFrame({'respRDM':RDMtmp,'numRDM':numRDM,'fsRDM':fsRDM,'isRDM':isRDM,'shapeRDM':shapeRDM})
+            corr=pg.partial_corr(pdData,x='respRDM',y='numRDM',x_covar=['fsRDM','isRDM','shapeRDM'],tail='one-sided',method='spearman') 
             RDMcorrNum[subjNum,tp] = corr['r']
             RDMpNum[subjNum,tp] = corr['p-val']
         
-            corr=pg.partial_corr(pdData,x='respRDM',y='fsRDM',x_covar=['numRDM','isRDM','LLFRDM'],tail='one-sided',method='spearman') 
+            corr=pg.partial_corr(pdData,x='respRDM',y='fsRDM',x_covar=['numRDM','isRDM','shapeRDM'],tail='one-sided',method='spearman') 
             RDMcorrFs[subjNum,tp] = corr['r']
             RDMpFs[subjNum,tp] = corr['p-val']
             
-            corr=pg.partial_corr(pdData,x='respRDM',y='isRDM',x_covar=['numRDM','fsRDM','LLFRDM'],tail='one-sided',method='spearman') 
+            corr=pg.partial_corr(pdData,x='respRDM',y='isRDM',x_covar=['numRDM','fsRDM','shapeRDM'],tail='one-sided',method='spearman') 
             RDMcorrIs[subjNum,tp] = corr['r']
             RDMpIs[subjNum,tp] = corr['p-val']
             
-            corr=pg.partial_corr(pdData,x='respRDM',y='LLFRDM',x_covar=['numRDM','fsRDM','isRDM'],tail='one-sided',method='spearman') 
-            RDMcorrLLF[subjNum,tp] = corr['r']
-            RDMpLLF[subjNum,tp] = corr['p-val']
+            corr=pg.partial_corr(pdData,x='respRDM',y='shapeRDM',x_covar=['numRDM','fsRDM','isRDM'],tail='one-sided',method='spearman') 
+            RDMcorrShape[subjNum,tp] = corr['r']
+            RDMpShape[subjNum,tp] = corr['p-val']
         elif partial == False:
             corr=pg.corr(x=RDMtmp,y=numRDM,tail='two-sided',method='spearman') 
             RDMcorrNum[subjNum,tp] = corr['r']
@@ -107,9 +111,9 @@ for subj in subjs:
             RDMcorrIs[subjNum,tp] = corr['r']
             RDMpIs[subjNum,tp] = corr['p-val']
             
-            corr=pg.corr(x=RDMtmp,y=LLFRDM,tail='two-sided',method='spearman') 
-            RDMcorrLLF[subjNum,tp] = corr['r']
-            RDMpLLF[subjNum,tp] = corr['p-val']
+            corr=pg.corr(x=RDMtmp,y=shapeRDM,tail='two-sided',method='spearman') 
+            RDMcorrShape[subjNum,tp] = corr['r']
+            RDMpShape[subjNum,tp] = corr['p-val']
         '''
         corr=pg.partial_corr(pdData,x='respRDM',y='numRDM',x_covar=['fsRDM','isRDM','LLFRDM'],tail='two-sided',method='spearman') 
         RDMcorrNum[subjNum,tp] = corr['r']
@@ -135,23 +139,23 @@ from statsmodels.stats.multitest import fdrcorrection
 def fdr(x):
     xx = fdrcorrection(x, alpha=0.05, method='indep', is_sorted=False)
     return(xx)
-tps = 80 # time points = 80
+tps = 240 # time points = 80
 pAvgNum = np.zeros(tps)
 pAvgFs = np.zeros(tps)
 pAvgIs = np.zeros(tps)
-pAvgLLF = np.zeros(tps)
+pAvgShape = np.zeros(tps)
 
-FDRCorrected = True
+FDRCorrected = False
 if FDRCorrected == True: # May not right
     corrAvgNum = np.average(RDMcorrNum,axis=0)
     corrAvgFs = np.average(RDMcorrFs,axis=0)
     corrAvgIs = np.average(RDMcorrIs,axis=0)
-    corrAvgLLF= np.average(RDMcorrLLF,axis=0)
+    corrAvgShape = np.average(RDMcorrShape,axis=0)
     for tp in range(tps):
         pAvgNum[tp] = np.average(fdr(RDMpNum[:,tp]))
         pAvgFs[tp] = np.average(fdr(RDMpFs[:,tp]))
         pAvgIs[tp] = np.average(fdr(RDMpIs[:,tp]))
-        pAvgLLF[tp] = np.average(fdr(RDMpLLF[:,tp]))
+        pAvgShape[tp] = np.average(fdr(RDMpShape[:,tp]))
 elif FDRCorrected == False:
     # average cross different 
     corrAvgNum = np.average(RDMcorrNum,axis=0)
@@ -160,32 +164,34 @@ elif FDRCorrected == False:
     pAvgFs = np.average(RDMpFs,axis=0)
     corrAvgIs = np.average(RDMcorrIs,axis=0)
     pAvgIs = np.average(RDMpIs,axis=0)
-    corrAvgLLF= np.average(RDMcorrLLF,axis=0)
-    pAvgLLF = np.average(RDMpLLF,axis=0)
+    corrAvgShape= np.average(RDMcorrShape,axis=0)
+    pAvgShape = np.average(RDMpShape,axis=0)
 
 import matplotlib.pyplot as plt
-plt.plot(range(-10,tps-10),corrAvgNum,label='Number',color='brown')
-plt.plot(range(-10,tps-10),corrAvgFs,label='Field size',color='mediumblue')
-plt.plot(range(-10,tps-10),corrAvgIs,label='Item size',color='forestgreen') #darkorange
-plt.plot(range(-10,tps-10),corrAvgLLF,label='low-level feature',color='black')
+plt.plot(range(-30,tps-30),corrAvgNum,label='Number',color='brown')
+plt.plot(range(-30,tps-30),corrAvgFs,label='Field size',color='mediumblue')
+plt.plot(range(-30,tps-30),corrAvgIs,label='Item size',color='forestgreen') #darkorange
+plt.plot(range(-30,tps-30),corrAvgShape,label='Shape',color='black')
 # plot the significant line
-pAvgNum[(pAvgNum>0.05)] = None
-pAvgNum[corrAvgNum<0] = None
-pAvgNum[(pAvgNum<=0.05)] = -0.15
-pAvgFs[(pAvgFs>0.05)] = None
-pAvgFs[corrAvgFs<0] = None
-pAvgFs[(pAvgFs<=0.05)] = -0.17
-pAvgIs[(pAvgIs>0.05)] = None
-pAvgIs[corrAvgIs<0] = None
-pAvgIs[(pAvgIs<=0.05)] = -0.19
-pAvgLLF[(pAvgLLF>0.05)] = None
-pAvgLLF[corrAvgLLF<0] = None
-pAvgLLF[(pAvgLLF<=0.05)] = -0.21
-plt.plot(range(-10,tps-10),pAvgNum,color='brown')
-plt.plot(range(-10,tps-10),pAvgFs,color='mediumblue')
-plt.plot(range(-10,tps-10),pAvgIs,color='forestgreen')
-plt.plot(range(-10,tps-10),pAvgLLF,color='black')
+th = 0.05
+thCorr = np.min([np.min(corrAvgNum),np.min(corrAvgFs),np.min(corrAvgIs),np.min(corrAvgShape)])
 
+pAvgNum[(pAvgNum>th)] = None
+pAvgNum[corrAvgNum<0] = None
+pAvgNum[(pAvgNum<=th)] = thCorr-0.01
+pAvgFs[(pAvgFs>th)] = None
+pAvgFs[corrAvgFs<0] = None
+pAvgFs[(pAvgFs<=th)] =  thCorr-0.02
+pAvgIs[(pAvgIs>th)] = None
+pAvgIs[corrAvgIs<0] = None
+pAvgIs[(pAvgIs<=th)] =  thCorr-0.03
+pAvgShape[(pAvgShape>th)] = None
+pAvgShape[corrAvgShape<0] = None
+pAvgShape[(pAvgShape<=th)] =  thCorr-0.04
+plt.plot((np.arange(-30,tps-30))/3,pAvgNum,color='brown') # range(-30,tps-30)
+plt.plot((np.arange(-30,tps-30))/3,pAvgFs,color='mediumblue')
+plt.plot((np.arange(-30,tps-30))/3,pAvgIs,color='forestgreen')
+plt.plot((np.arange(-30,tps-30))/3,pAvgShape,color='black')
 
 plt.xlabel('Time points(10ms)')
 if partial == True:
