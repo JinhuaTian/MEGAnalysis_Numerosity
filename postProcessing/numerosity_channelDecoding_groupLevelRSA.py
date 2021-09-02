@@ -168,10 +168,10 @@ elif FDRCorrected == False:
     pAvgShape = np.average(RDMpShape,axis=0)
 
 import matplotlib.pyplot as plt
-plt.plot(range(-30,tps-30),corrAvgNum,label='Number',color='brown')
-plt.plot(range(-30,tps-30),corrAvgFs,label='Field size',color='mediumblue')
-plt.plot(range(-30,tps-30),corrAvgIs,label='Item size',color='forestgreen') #darkorange
-plt.plot(range(-30,tps-30),corrAvgShape,label='Shape',color='black')
+plt.plot((np.arange(-30,tps-30))/3,corrAvgNum,label='Number',color='brown')
+plt.plot((np.arange(-30,tps-30))/3,corrAvgFs,label='Field size',color='mediumblue')
+plt.plot((np.arange(-30,tps-30))/3,corrAvgIs,label='Item size',color='forestgreen') #darkorange
+plt.plot((np.arange(-30,tps-30))/3,corrAvgShape,label='Shape',color='black')
 # plot the significant line
 th = 0.05
 thCorr = np.min([np.min(corrAvgNum),np.min(corrAvgFs),np.min(corrAvgIs),np.min(corrAvgShape)])

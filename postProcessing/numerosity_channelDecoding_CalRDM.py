@@ -19,12 +19,12 @@ import numpy as np
 import os
 from os.path import join as pj
 from sklearn.model_selection import StratifiedKFold
-from sklearn.svm import SVC
+# from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 import time
-import matplotlib
-matplotlib.use('Qt5Agg') #TkAgg
-#from libsvm import svmutil as sv # pip install -U libsvm-official
+# import matplotlib
+# matplotlib.use('Qt5Agg') #TkAgg
+from libsvm import svmutil as sv # pip install -U libsvm-official
 #import sys
 #sys.path.append('/nfs/a2/userhome/tianjinhua/workingdir/meg/mne/')
 import mne
@@ -36,7 +36,7 @@ from numba import jit
 jit(nopython=True,parallel=True) #nopython=True,parallel=True
 
 # basic info
-rootDir = 'D:/temp'
+rootDir = '/nfs/a2/userhome/tianjinhua/workingdir/meg2/'
 #subjName = ['subj016']
 subjid = 'subj004'
 # 'subj002','subj003','subj004','subj005','subj006','subj007','subj008','subj009','subj010'
@@ -53,6 +53,14 @@ for x in range(80):
     for y in range(80):
         if x != y and x + y < 80: # exclude same id
             indexNum = indexNum + 1
+
+# calculate label pairs
+labelPair = np.array([],dtype=int)
+for x in range(80):
+    for y in range(80):
+        if x != y and x + y < 80: #x + y < 82:
+            labelPair = np.hstack((labelPair,[x,y]))
+labelPair = labelPair.reshape((-1,2))
 
 accs = np.zeros([tpoints,repeat,kfold,indexNum]) # time,[label-1,label-1],fold,repeat
 
@@ -133,31 +141,32 @@ for t in range(nTime):
             trainPd = np.concatenate((yTrain,xTrain),axis=1) # train data
             testPd = np.concatenate((yTest,xTest),axis=1) # test data
             RDMindex = 0
-            for x in range(80):
-                for y in range(80):
-                    if x != y and x + y < 80: #x + y < 82:
-                        Pd1 = trainPd[(trainPd[:,0] == (x+1)) | (trainPd[:,0] == (y+1))] # labels are 1~80
-                        Pd2 = testPd[(testPd[:,0] == (x+1)) | (testPd[:,0] == (y+1))]
-                        # run svm
-                        svm = SVC(kernel="linear")
-                        svm.fit(Pd1[:,1:],Pd1[:,0])
-                        acc = svm.score(Pd2[:,1:],Pd2[:,0]) # sub,time,RDMindex,fold,repeat # t,re,foldIndex,RDMindex
-                        # save acc
-                        accs[t, re, foldIndex, RDMindex] = acc
-                        '''
-                        model = sv.svm_train(Pd1[:,0],Pd1[:,1:], "-q -t 0")
-                        _, p_acc, _ = sv.svm_predict(Pd2[:,0],Pd2[:,1:], model, "-q")#p_label, p_acc, p_val = 
-                        # save acc
-                        accs[t,re,foldIndex,RDMindex]=p_acc[0]
-                        '''
-                        RDMindex = RDMindex + 1
+            for i in range(labelPair.shape[0]): 
+                x,y = labelPair[i,0],labelPair[i,1]
+                Pd1 = trainPd[(trainPd[:,0] == (x+1)) | (trainPd[:,0] == (y+1))] # labels are 1~80
+                Pd2 = testPd[(testPd[:,0] == (x+1)) | (testPd[:,0] == (y+1))]
+                # run svm
+                '''
+                svm = SVC(kernel="linear", decision_function_shape='ovr')
+                svm.fit(Pd1[:,1:],Pd1[:,0])
+                acc = svm.score(Pd2[:,1:],Pd2[:,0]) # sub,time,RDMindex,fold,repeat # t,re,foldIndex,RDMindex
+                # save acc
+                accs[t, re, foldIndex, RDMindex] = acc
+                '''
+                model = sv.svm_train(Pd1[:,0],Pd1[:,1:], "-q -s 0 -t 0")
+                # see for details https://github.com/cjlin1/libsvm/blob/master/python/README 
+                _, p_acc, _ = sv.svm_predict(Pd2[:,0],Pd2[:,1:], model,"-q")# p_acc: a tuple including accuracy (for classification), mean squared error, and squared correlation coefficient (for regression).
+                # save acc
+                accs[t,re,foldIndex,RDMindex]=p_acc[0]
+                
+                RDMindex = RDMindex + 1
             foldIndex = foldIndex + 1
     time_elapsed = time.time() - time0
     print('Time point {} finished in {:.0f}m {:.0f}s'.format(t, time_elapsed // 60, time_elapsed % 60)) # + 'repeat '+ str(re)
 
 
 # save MEG RDM
-fileName = pj(rootDir, 'ctfRDM3x100x300hz_'+ subjid +'.npy')
+fileName = pj(rootDir, 'ctfRDM3x100x300hzlibsvm_'+ subjid +'.npy')
 np.save(fileName,accs)
 
 '''
