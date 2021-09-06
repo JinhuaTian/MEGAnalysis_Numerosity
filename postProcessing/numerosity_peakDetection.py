@@ -3,6 +3,8 @@
 Created on Thu Sep  2 10:44:02 2021
 
 @author: tclem
+
+scripts for correlation peak detection
 """
 
 import numpy as np

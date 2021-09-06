@@ -19,12 +19,12 @@ import numpy as np
 import os
 from os.path import join as pj
 from sklearn.model_selection import StratifiedKFold
-# from sklearn.svm import SVC
+from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 import time
 # import matplotlib
 # matplotlib.use('Qt5Agg') #TkAgg
-from libsvm import svmutil as sv # pip install -U libsvm-official
+#from libsvm import svmutil as sv # pip install -U libsvm-official
 #import sys
 #sys.path.append('/nfs/a2/userhome/tianjinhua/workingdir/meg/mne/')
 import mne
@@ -37,29 +37,23 @@ jit(nopython=True,parallel=True) #nopython=True,parallel=True
 
 # basic info
 rootDir = '/nfs/a2/userhome/tianjinhua/workingdir/meg2/'
-#subjName = ['subj016']
-subjid = 'subj004'
+subjid = 'subj015' #subjName = ['subj016']
 # 'subj002','subj003','subj004','subj005','subj006','subj007','subj008','subj009','subj010'
 
 newSamplingRate = 300
 repeat = 100
 kfold = 3
 labelNum = 80
-tpoints = 240
+tpoints = 240 #3*80
 
 # compute pair number:
 indexNum = 0
-for x in range(80):
-    for y in range(80):
-        if x != y and x + y < 80: # exclude same id
-            indexNum = indexNum + 1
-
 # calculate label pairs
 labelPair = np.array([],dtype=int)
-for x in range(80):
-    for y in range(80):
-        if x != y and x + y < 80: #x + y < 82:
-            labelPair = np.hstack((labelPair,[x,y]))
+for x in range(labelNum):
+    for y in range(x+1,labelNum):
+        labelPair = np.hstack((labelPair,[x,y]))
+        indexNum = indexNum + 1
 labelPair = labelPair.reshape((-1,2))
 
 accs = np.zeros([tpoints,repeat,kfold,indexNum]) # time,[label-1,label-1],fold,repeat
@@ -67,7 +61,6 @@ accs = np.zeros([tpoints,repeat,kfold,indexNum]) # time,[label-1,label-1],fold,r
 pcNum = [] # restore the number of PCs
 
 # compute MEG RDM using pairwise SVM classification
-
 print('subject ' + subjid +' is running.')
 savePath = pj(rootDir, subjid, 'preprocessed')
 epochs_list = []
@@ -146,8 +139,8 @@ for t in range(nTime):
                 Pd1 = trainPd[(trainPd[:,0] == (x+1)) | (trainPd[:,0] == (y+1))] # labels are 1~80
                 Pd2 = testPd[(testPd[:,0] == (x+1)) | (testPd[:,0] == (y+1))]
                 # run svm
-                '''
-                svm = SVC(kernel="linear", decision_function_shape='ovr')
+                
+                svm = SVC(kernel="linear")
                 svm.fit(Pd1[:,1:],Pd1[:,0])
                 acc = svm.score(Pd2[:,1:],Pd2[:,0]) # sub,time,RDMindex,fold,repeat # t,re,foldIndex,RDMindex
                 # save acc
@@ -158,7 +151,7 @@ for t in range(nTime):
                 _, p_acc, _ = sv.svm_predict(Pd2[:,0],Pd2[:,1:], model,"-q")# p_acc: a tuple including accuracy (for classification), mean squared error, and squared correlation coefficient (for regression).
                 # save acc
                 accs[t,re,foldIndex,RDMindex]=p_acc[0]
-                
+                '''
                 RDMindex = RDMindex + 1
             foldIndex = foldIndex + 1
     time_elapsed = time.time() - time0
@@ -166,7 +159,7 @@ for t in range(nTime):
 
 
 # save MEG RDM
-fileName = pj(rootDir, 'ctfRDM3x100x300hzlibsvm_'+ subjid +'.npy')
+fileName = pj(rootDir, 'ctfRDM3x100x300hz_'+ subjid +'.npy')
 np.save(fileName,accs)
 
 '''

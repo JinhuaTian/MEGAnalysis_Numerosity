@@ -25,36 +25,37 @@ shapeRDM = []
 
 cc = 0
 # compute model RDM
-for x in range(80):
-    for y in range(80):
-        if x != y and x + y < 80: #x + y < 80:
-            cc = cc+1
-            # num RDM
-            if eventMatrix[x,0] == eventMatrix[y,0]:
-                numRDM.append(0)
-            else:
-                numRDM.append(1)
-            # fs RDM
-            if eventMatrix[x,1] == eventMatrix[y,1]:
-                fsRDM.append(0)
-            else:
-                fsRDM.append(1)
-            # is RDM
-            if eventMatrix[x,2] == eventMatrix[y,2]:
-                isRDM.append(0)
-            else:
-                isRDM.append(1)
-            # shape RDM
-            if eventMatrix[x,3] == eventMatrix[y,3]:
-                shapeRDM.append(0)
-            else:
-                shapeRDM.append(1)
+labelNum = 80
+for x in range(labelNum):
+    for y in range(x+1,labelNum):
+        #if x != y and x + y < 80: #x + y < 80:
+        cc = cc+1
+        # num RDM
+        if eventMatrix[x,0] == eventMatrix[y,0]:
+            numRDM.append(0)
+        else:
+            numRDM.append(1)
+        # fs RDM
+        if eventMatrix[x,1] == eventMatrix[y,1]:
+            fsRDM.append(0)
+        else:
+            fsRDM.append(1)
+        # is RDM
+        if eventMatrix[x,2] == eventMatrix[y,2]:
+            isRDM.append(0)
+        else:
+            isRDM.append(1)
+        # shape RDM
+        if eventMatrix[x,3] == eventMatrix[y,3]:
+            shapeRDM.append(0)
+        else:
+            shapeRDM.append(1)
         
 
 subjs = ['004','005','006','007','009','011','012','013','014','015','016','017','018','019','020','021','022','023'] # '2','3','4','5','6','8','9','10'
 path = 'E:/temp'
 # make 4 dimension x 2 (r value and p value) empty matrix 
-subjNums, tps, RDM, fold, repeats = len(subjs), 240, 3200, 3, 100 # 3*80
+subjNums, tps, RDM, fold, repeats = len(subjs), 240, 3160, 3, 100 # 3*80
 RDMcorrNum = np.zeros((subjNums,tps))
 RDMpNum = np.zeros((subjNums,tps))
 RDMcorrFs = np.zeros((subjNums,tps))
