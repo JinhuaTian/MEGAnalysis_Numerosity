@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+Created on Thu Sep  2 10:44:02 2021
+
 @author: tclem
-# compute partial Spearman correlation
-# https://pingouin-stats.org/generated/pingouin.partial_corr.html
 """
 
 import numpy as np

@@ -8,25 +8,19 @@ import numpy as np
 #import pingouin as pg
 from pingouin import correlation as pg
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler,StandardScaler
 
-filePath = r'C:\Users\tclem\Desktop\MEG\NewMEGRDM3x100_subj6.npy'
+filePath = r'E:/temp/ctfRDM3x100x300hz_subj006.npy'
 
 # make stimulus RDM
-eventMatrix = np.array([[1,1,1,1],[1,1,1,2],[1,1,1,3],[1,1,1,4],[1,1,1,5],[1,1,1,6],[1,1,1,7],[1,1,1,8],[1,1,1,9],[1,1,1,10],
-                [1,1,2,11],[1,1,2,12],[1,1,2,13],[1,1,2,14],[1,1,2,15],[1,1,2,16],[1,1,2,17],[1,1,2,18],[1,1,2,19],[1,1,2,20],
-                [1,2,1,21],[1,2,1,22],[1,2,1,23],[1,2,1,24],[1,2,1,25],[1,2,1,26],[1,2,1,27],[1,2,1,28],[1,2,1,29],[1,2,1,30],
-                [1,2,2,31],[1,2,2,32],[1,2,2,33],[1,2,2,34],[1,2,2,35],[1,2,2,36],[1,2,2,37],[1,2,2,38],[1,2,2,39],[1,2,2,40],
-                [2,1,1,41],[2,1,1,42],[2,1,1,43],[2,1,1,44],[2,1,1,45],[2,1,1,46],[2,1,1,47],[2,1,1,48],[2,1,1,49],[2,1,1,50],
-                [2,1,2,51],[2,1,2,52],[2,1,2,53],[2,1,2,54],[2,1,2,55],[2,1,2,56],[2,1,2,57],[2,1,2,58],[2,1,2,59],[2,1,2,60],
-                [2,2,1,61],[2,2,1,62],[2,2,1,63],[2,2,1,64],[2,2,1,65],[2,2,1,66],[2,2,1,67],[2,2,1,68],[2,2,1,69],[2,2,1,70],
-                [2,2,2,71],[2,2,2,72],[2,2,2,73],[2,2,2,74],[2,2,2,75],[2,2,2,76],[2,2,2,77],[2,2,2,78],[2,2,2,79],[2,2,2,80]])
+eventMatrix =  np.loadtxt('C:/Users/tclem/Documents/GitHub/MEGAnalysis_Numerosity/postProcessing/STI.txt')
 
 # make correlation matrix
 index = 0
 numRDM = []
 fsRDM = []
 isRDM = []
+shapeRDM = []
 #LLFRDM = np.load('C:/Users/tclem/Desktop/MEG/LowLevelMatrix.npy') # low-level features
 
 
@@ -58,12 +52,12 @@ for x in range(80):
 
 # compute partial spearman correlation, with other 2 RDM controlled 
 data = np.load(filePath) # subIndex,t,re,foldIndex,RDMindex 
-subIndex,t,re,foldIndex,RDMindex = data.shape
-data = data.reshape(subIndex*t*re*foldIndex,RDMindex)
+t,re,foldIndex,RDMindex = data.shape
+data = data.reshape(t*re*foldIndex,RDMindex)
 # normalize the MEG RDM to [0,1]
 scaler = StandardScaler()
 data = scaler.fit_transform(data)
-data = data.reshape(subIndex,t,re,foldIndex,RDMindex)
+data = data.reshape(t,re,foldIndex,RDMindex)
 
 # make 3 x 2 empty matrix 
 subjs, tps, RDM, fold, repeats = data.shape
@@ -90,7 +84,7 @@ for x in range(80):
 data = data[:,:,indexlist,:,:]#remove 0 component
 '''
 #partial = False
-method = 'Kendall'
+method = 'Spearman'
 for subj in range(subjs):
     for tp in range(tps):
         # datatmp = data[subj, tp,:] # subIndex,t,re,foldIndex,RDMindex 
@@ -117,6 +111,7 @@ for subj in range(subjs):
             corr=pg.partial_corr(pdData,x='respRDM',y='shapeRDM',x_covar=['numRDM','fsRDM','isRDM'],tail='two-sided',method='spearman') 
             RDMcorrShape[subj,tp] = corr['r']
             RDMpShape[subj,tp] = corr['p-val']
+        '''
         elif method == 'Kendall':
             RDMcorrNum[subj,tp], RDMpNum[subj,tp] = kendalltau(RDMtmp,numRDM)
         
@@ -125,6 +120,7 @@ for subj in range(subjs):
             RDMcorrIs[subj,tp], RDMpIs[subj,tp] = kendalltau(RDMtmp,isRDM)
                 
             RDMcorrShape[subj,tp], RDMpShape[subj,tp] = kendalltau(RDMtmp,shapeRDM)
+        '''
 '''
 elif partial == False:
     corr=pg.corr(x=RDMtmp,y=numRDM,tail='two-sided',method='spearman') 
