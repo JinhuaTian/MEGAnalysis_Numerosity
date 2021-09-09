@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-@author: tclem
-# compute partial Spearman correlation
-# https://pingouin-stats.org/generated/pingouin.partial_corr.html
+Created on Wed Sep  8 12:38:05 2021
+
+@author: Clemens
 """
 import numpy as np
 #import pingouin as pg
@@ -11,11 +11,18 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler,StandardScaler
 import matplotlib.pyplot as plt
 import matplotlib
+from os.path import join as pj
 #matplotlib.use('Qt5Agg')
-filePath = 'D:/MEG/channelRDM/ctfRDM3x100x300hz_subj013.npy'
+filePath = 'D:/MEG/source'
 
 # make stimulus RDM
 eventMatrix =  np.loadtxt(r'C:\Users\Clemens\Documents\GitHub\MEGAnalysis_Numerosity\postProcessing\STI.txt')
+
+rootDir = '/home/jhtian/workingdir/meg2/'
+subjid = 'subj004'
+labeltag = 'V3AB'
+
+fileName = pj(filePath,'ctfRDM3x100_subj004' + labeltag+'.npy')
 
 # make correlation matrix
 index = 0
@@ -52,7 +59,9 @@ for x in range(labelNum):
 
 
 # compute partial spearman correlation, with other 2 RDM controlled 
-data = np.load(filePath) # subIndex,t,re,foldIndex,RDMindex 
+data = np.load(fileName) # subIndex,t,re,foldIndex,RDMindex 
+data = np.squeeze(data)
+
 t,re,foldIndex,RDMindex = data.shape
 data = data.reshape(t*re*foldIndex,RDMindex)
 # normalize the MEG RDM to [0,1]
@@ -173,14 +182,11 @@ plt.title('Time course of correlations between MEG RDMs and model RDMs') # parti
 plt.legend()
 plt.show()
 
-plotAverage = False
+plotAverage = True
 # plot average acc
 # we should use raw data here
 if plotAverage == True:
-    data = np.load(filePath) # t,re,foldIndex,RDMindex
     partialAvgAcc = np.average(data, axis=(1, 2, 3))
-    
-    
     partialAvgAcc = np.squeeze(partialAvgAcc)
     x = partialAvgAcc.shape
     plt.plot((np.arange(-30,tps-30))/3,partialAvgAcc)

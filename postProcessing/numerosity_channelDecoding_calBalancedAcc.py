@@ -9,11 +9,12 @@ import numpy as np
 from os.path import join as pj
 
 # make stimulus RDM
-eventMatrix = np.loadtxt('C:/Users/tclem/Documents/GitHub/MEGAnalysis_Numerosity/postProcessing/STI.txt')
-
-subjs = ['004','005','006','007','009','011','012','013','014','015','016','017','018','020','021','022','023'] # #'4','5','6',
-path =  r'E:\temp'
+eventMatrix = np.loadtxt(r'C:\Users\Clemens\Documents\GitHub\MEGAnalysis_Numerosity\postProcessing\STI.txt')
+# '004','005','006','007','009','011','012','013','014','015','016','017','018','020','021','022','023'
+subjs = ['004','005','006','007','009','011','012','013','014','015','016','017','018','019','020','021','022','023'] # #'4','5','6',
+path =  r'D:\MEG\channelRDM'
 timepoints = 240
+tps = 240
 
 # make correlation matrix
 subjIndex = 0
@@ -22,6 +23,7 @@ fsRDMs = np.zeros((len(subjs),timepoints))
 isRDMs = np.zeros((len(subjs),timepoints))
 shapeRDMs = np.zeros((len(subjs),timepoints))
 
+labelNum = 80
 
 subjNum = 0
 for subj in subjs:
@@ -37,24 +39,23 @@ for subj in subjs:
     isRDM = []
     shapeRDM = []
 
-    for x in range(80):
-        for y in range(80):
-            if x != y and x + y < 80: #x + y < 80:
-                # num RDM
-                if eventMatrix[x,1] == eventMatrix[y,1] and eventMatrix[x,2] == eventMatrix[y,2] and eventMatrix[x,3] == eventMatrix[y,3]:
-                    numRDM.append(dataAcc[:,index])
-                    index = index + 1
-                elif eventMatrix[x,0] == eventMatrix[y,0] and eventMatrix[x,2] == eventMatrix[y,2] and eventMatrix[x,3] == eventMatrix[y,3]:
-                    fsRDM.append(dataAcc[:,index])
-                    index = index + 1
-                elif eventMatrix[x,0] == eventMatrix[y,0] and eventMatrix[x,1] == eventMatrix[y,1] and eventMatrix[x,3] == eventMatrix[y,3]:
-                    isRDM.append(dataAcc[:,index])
-                    index = index + 1
-                elif eventMatrix[x,0] == eventMatrix[y,0] and eventMatrix[x,1] == eventMatrix[y,1] and eventMatrix[x,2] == eventMatrix[y,2]:
-                    shapeRDM.append(dataAcc[:,index])
-                    index = index + 1
-                else:
-                    index = index + 1
+    for x in range(labelNum):
+        for y in range(x+1,labelNum):
+            # num RDM
+            if eventMatrix[x,1] == eventMatrix[y,1] and eventMatrix[x,2] == eventMatrix[y,2] and eventMatrix[x,3] == eventMatrix[y,3]:
+                numRDM.append(dataAcc[:,index])
+                index = index + 1
+            elif eventMatrix[x,0] == eventMatrix[y,0] and eventMatrix[x,2] == eventMatrix[y,2] and eventMatrix[x,3] == eventMatrix[y,3]:
+                fsRDM.append(dataAcc[:,index])
+                index = index + 1
+            elif eventMatrix[x,0] == eventMatrix[y,0] and eventMatrix[x,1] == eventMatrix[y,1] and eventMatrix[x,3] == eventMatrix[y,3]:
+                isRDM.append(dataAcc[:,index])
+                index = index + 1
+            elif eventMatrix[x,0] == eventMatrix[y,0] and eventMatrix[x,1] == eventMatrix[y,1] and eventMatrix[x,2] == eventMatrix[y,2]:
+                shapeRDM.append(dataAcc[:,index])
+                index = index + 1
+            else:
+                index = index + 1
     
     numRDM = np.array(numRDM).T
     numRDM = np.average(numRDM,axis=1)
@@ -80,10 +81,10 @@ avgshapeRDM = np.average(shapeRDMs,axis=0)
 
 import matplotlib.pyplot as plt
 x = numRDM.shape
-plt.plot(range(-30,x[0]-30),avgnumRDM,label='number',color='brown')
-plt.plot(range(-30,x[0]-30),avgfsRDM,label='field size',color='mediumblue')
-plt.plot(range(-30,x[0]-30),avgisRDM,label='item size',color='forestgreen')
-plt.plot(range(-30,x[0]-30),avgshapeRDM,label='item size',color='black')
+plt.plot((np.arange(-30,tps-30))/3,avgnumRDM,label='Number',color='brown')
+plt.plot((np.arange(-30,tps-30))/3,avgfsRDM,label='Field size',color='mediumblue')
+plt.plot((np.arange(-30,tps-30))/3,avgisRDM,label='Item size',color='forestgreen')
+plt.plot((np.arange(-30,tps-30))/3,avgshapeRDM,label='Shape',color='black')
 
 plt.xlabel('Time points(10ms)')
 plt.ylabel('Decoding accuracy')

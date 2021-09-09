@@ -11,9 +11,9 @@ from pingouin import correlation as pg
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler,StandardScaler
 from os.path import join as pj
-
+from neurora.stuff import clusterbased_permutation_1d_1samp_1sided as clusterP
 # load stimulus RDM
-eventMatrix = np.loadtxt('C:/Users/tclem/Documents/GitHub/MEGAnalysis_Numerosity/postProcessing/STI.txt')
+eventMatrix = np.loadtxt(r'C:\Users\Clemens\Documents\GitHub\MEGAnalysis_Numerosity\postProcessing\STI.txt')
 
 # make correlation matrix
 index = 0
@@ -51,9 +51,9 @@ for x in range(labelNum):
         else:
             shapeRDM.append(1)
         
-
-subjs = ['004','005','006','007','009','011','012','013','014','015','016','017','018','019','020','021','022','023'] # '2','3','4','5','6','8','9','10'
-path = 'E:/temp'
+#'004','005','006','007','009','011','012','013','014','015','016','017','018','019','020','021','022','023'
+subjs = ['004','005','006','007','009','011','012','013','014','015','016','017','018','019','020','021','022','023']
+path = 'D:/MEG/channelRDM/'
 # make 4 dimension x 2 (r value and p value) empty matrix 
 subjNums, tps, RDM, fold, repeats = len(subjs), 240, 3160, 3, 100 # 3*80
 RDMcorrNum = np.zeros((subjNums,tps))
@@ -65,7 +65,7 @@ RDMpIs = np.zeros((subjNums,tps))
 RDMcorrShape = np.zeros((subjNums,tps))
 RDMpShape = np.zeros((subjNums,tps))
 
-partial = True
+partial = False
 subjNum = 0
 for subj in subjs:
     fileName = 'ctfRDM3x100x300hz_subj'+ subj + '.npy'
@@ -75,8 +75,8 @@ for subj in subjs:
     t,re,foldIndex,RDMindex = data.shape
     data = data.reshape(t*re*foldIndex,RDMindex)
     # normalize the MEG RDM to [0,1]
-    scaler = StandardScaler()
-    data = scaler.fit_transform(data)
+    #  scaler = StandardScaler()
+    #  data = scaler.fit_transform(data)
     data = data.reshape(t,re,foldIndex,RDMindex)
     
     for tp in range(tps):
@@ -84,54 +84,37 @@ for subj in subjs:
         RDMtmp = np.average(data[tp,:,:,:], axis=(0, 1))
         if partial == True:
             pdData = pd.DataFrame({'respRDM':RDMtmp,'numRDM':numRDM,'fsRDM':fsRDM,'isRDM':isRDM,'shapeRDM':shapeRDM})
-            corr=pg.partial_corr(pdData,x='respRDM',y='numRDM',x_covar=['fsRDM','isRDM','shapeRDM'],tail='one-sided',method='spearman') 
+            corr=pg.partial_corr(pdData,x='respRDM',y='numRDM',x_covar=['fsRDM','isRDM','shapeRDM'],alternative='one-sided',method='spearman') 
             RDMcorrNum[subjNum,tp] = corr['r']
             RDMpNum[subjNum,tp] = corr['p-val']
         
-            corr=pg.partial_corr(pdData,x='respRDM',y='fsRDM',x_covar=['numRDM','isRDM','shapeRDM'],tail='one-sided',method='spearman') 
+            corr=pg.partial_corr(pdData,x='respRDM',y='fsRDM',x_covar=['numRDM','isRDM','shapeRDM'],alternative='one-sided',method='spearman') 
             RDMcorrFs[subjNum,tp] = corr['r']
             RDMpFs[subjNum,tp] = corr['p-val']
             
-            corr=pg.partial_corr(pdData,x='respRDM',y='isRDM',x_covar=['numRDM','fsRDM','shapeRDM'],tail='one-sided',method='spearman') 
+            corr=pg.partial_corr(pdData,x='respRDM',y='isRDM',x_covar=['numRDM','fsRDM','shapeRDM'],alternative='one-sided',method='spearman') 
             RDMcorrIs[subjNum,tp] = corr['r']
             RDMpIs[subjNum,tp] = corr['p-val']
             
-            corr=pg.partial_corr(pdData,x='respRDM',y='shapeRDM',x_covar=['numRDM','fsRDM','isRDM'],tail='one-sided',method='spearman') 
+            corr=pg.partial_corr(pdData,x='respRDM',y='shapeRDM',x_covar=['numRDM','fsRDM','isRDM'],alternative='one-sided',method='spearman') 
             RDMcorrShape[subjNum,tp] = corr['r']
             RDMpShape[subjNum,tp] = corr['p-val']
         elif partial == False:
-            corr=pg.corr(x=RDMtmp,y=numRDM,tail='two-sided',method='spearman') 
+            corr=pg.corr(x=RDMtmp,y=numRDM,alternative='two-sided',method='spearman') 
             RDMcorrNum[subjNum,tp] = corr['r']
             RDMpNum[subjNum,tp] = corr['p-val']
         
-            corr=pg.corr(x=RDMtmp,y=fsRDM,tail='two-sided',method='spearman') 
+            corr=pg.corr(x=RDMtmp,y=fsRDM,alternative='two-sided',method='spearman') 
             RDMcorrFs[subjNum,tp] = corr['r']
             RDMpFs[subjNum,tp] = corr['p-val']
             
-            corr=pg.corr(x=RDMtmp,y=isRDM,tail='two-sided',method='spearman') 
+            corr=pg.corr(x=RDMtmp,y=isRDM,alternative='two-sided',method='spearman') 
             RDMcorrIs[subjNum,tp] = corr['r']
             RDMpIs[subjNum,tp] = corr['p-val']
             
-            corr=pg.corr(x=RDMtmp,y=shapeRDM,tail='two-sided',method='spearman') 
+            corr=pg.corr(x=RDMtmp,y=shapeRDM,alternative='two-sided',method='spearman') 
             RDMcorrShape[subjNum,tp] = corr['r']
             RDMpShape[subjNum,tp] = corr['p-val']
-        '''
-        corr=pg.partial_corr(pdData,x='respRDM',y='numRDM',x_covar=['fsRDM','isRDM','LLFRDM'],tail='two-sided',method='spearman') 
-        RDMcorrNum[subjNum,tp] = corr['r']
-        RDMpNum[subjNum,tp] = corr['p-val']
-    
-        corr=pg.partial_corr(pdData,x='respRDM',y='fsRDM',x_covar=['numRDM','isRDM','LLFRDM'],tail='two-sided',method='spearman') 
-        RDMcorrFs[subjNum,tp] = corr['r']
-        RDMpFs[subjNum,tp] = corr['p-val']
-        
-        corr=pg.partial_corr(pdData,x='respRDM',y='isRDM',x_covar=['numRDM','fsRDM','LLFRDM'],tail='two-sided',method='spearman') 
-        RDMcorrIs[subjNum,tp] = corr['r']
-        RDMpIs[subjNum,tp] = corr['p-val']
-        
-        corr=pg.partial_corr(pdData,x='respRDM',y='LLFRDM',x_covar=['numRDM','fsRDM','isRDM'],tail='two-sided',method='spearman') 
-        RDMcorrLLF[subjNum,tp] = corr['r']
-        RDMpLLF[subjNum,tp] = corr['p-val']
-        '''
     subjNum = subjNum + 1
     del data
 
@@ -140,12 +123,13 @@ from statsmodels.stats.multitest import fdrcorrection
 def fdr(x):
     xx = fdrcorrection(x, alpha=0.05, method='indep', is_sorted=False)
     return(xx)
+
 tps = 240 # time points = 80
 pAvgNum = np.zeros(tps)
 pAvgFs = np.zeros(tps)
 pAvgIs = np.zeros(tps)
 pAvgShape = np.zeros(tps)
-
+'''
 FDRCorrected = False
 if FDRCorrected == True: # May not right
     corrAvgNum = np.average(RDMcorrNum,axis=0)
@@ -157,7 +141,14 @@ if FDRCorrected == True: # May not right
         pAvgFs[tp] = np.average(fdr(RDMpFs[:,tp]))
         pAvgIs[tp] = np.average(fdr(RDMpIs[:,tp]))
         pAvgShape[tp] = np.average(fdr(RDMpShape[:,tp]))
-elif FDRCorrected == False:
+'''
+clusterCorrected = True #clusterP
+if clusterCorrected == True: # May not right
+    pAvgNum = clusterP(RDMpNum)
+    pAvgFs = clusterP(RDMpFs)
+    pAvgIs = clusterP(RDMpIs)
+    pAvgShape = clusterP(RDMpShape)
+elif clusterCorrected == False:
     # average cross different 
     corrAvgNum = np.average(RDMcorrNum,axis=0)
     pAvgNum = np.average(RDMpNum,axis=0)
@@ -168,7 +159,13 @@ elif FDRCorrected == False:
     corrAvgShape= np.average(RDMcorrShape,axis=0)
     pAvgShape = np.average(RDMpShape,axis=0)
 
+corrAvgNum = np.average(RDMcorrNum,axis=0)
+corrAvgFs = np.average(RDMcorrFs,axis=0)
+corrAvgIs = np.average(RDMcorrIs,axis=0)
+corrAvgShape = np.average(RDMcorrShape,axis=0)
+    
 import matplotlib.pyplot as plt
+fig = plt.figure(figsize=(9,6),dpi=100)
 plt.plot((np.arange(-30,tps-30))/3,corrAvgNum,label='Number',color='brown')
 plt.plot((np.arange(-30,tps-30))/3,corrAvgFs,label='Field size',color='mediumblue')
 plt.plot((np.arange(-30,tps-30))/3,corrAvgIs,label='Item size',color='forestgreen') #darkorange
@@ -218,3 +215,94 @@ plt.xlabel('Time points(10ms)')
 plt.ylabel('Decoding accuracy')
 plt.title('Pairwise decoding accuracy(average)')
 '''
+
+#peak detecttion:
+NumOnsetTp = np.zeros(len(subjs))
+NumPeakTp = np.zeros(len(subjs))
+FsOnsetTp = np.zeros(len(subjs))
+FsPeakTp = np.zeros(len(subjs))
+for sub in range(len(subjs)): #50~200ms, 15~30 * 3 tps
+    tp = np.where(RDMpNum[sub, 45:90]<0.05)
+    NumOnsetTp[sub] = tp[0][0]
+    NumPeakTp[sub] = np.where(RDMcorrNum[sub, 45:90] == np.max(RDMcorrNum[sub, 45:90]))[0]
+    
+    tp = np.where(RDMpFs[sub, 45:90]<0.05)
+    FsOnsetTp[sub] = tp[0][0]
+    FsPeakTp[sub] = np.where(RDMcorrFs[sub, 45:90] == np.max(RDMcorrFs[sub, 45:90]))[0]
+
+NumOnsetTp = NumOnsetTp *3 + 50
+NumPeakTp = NumPeakTp *3 + 50
+FsOnsetTp = FsOnsetTp *3 + 50
+FsPeakTp = FsPeakTp *3 + 50
+
+import pandas as pd
+import seaborn as sns
+dataOnset = pd.DataFrame({"Number onset":NumOnsetTp,"Field size onset":FsOnsetTp})
+sns.boxplot(data=dataOnset)
+plt.title('Onset time difference')
+plt.ylabel('Latency(ms)')
+plt.legend()
+plt.show()
+
+dataPeak = pd.DataFrame({"Number peak":NumPeakTp,"Field size peak":FsPeakTp})
+sns.boxplot(data=dataPeak)
+plt.title('Peak difference')
+plt.ylabel('Latency(ms)')
+plt.legend()
+plt.show()
+
+
+# main function of permutation
+def permutation_diff(list1, list2, n_permutation=10000, tail='both'):
+    """
+    Make permutation test for the difference of mean values between list1 and list2
+    Parameters:
+    -----------
+    list1, list2: two lists contain data
+    n_permutation: permutation times
+    tail: 'larger', one-tailed test, test if list_diff is larger than diff_scores
+          'smaller', one-tailed test, test if list_diff is smaller than diff_score
+          'both', two_tailed test
+    Output:
+    -------
+    list_diff: difference between list1 and list2
+    diff_scores: different values after the permutation
+    pvalue: pvalues
+    Examples:
+    ----------
+    >>> list_diff, diff_scores, pvalue = permutation_diff(list1, list2)
+    """
+    if not isinstance(list1, list):
+        list1 = list(list1.flatten())
+    if not isinstance(list2, list):
+        list2 = list(list2.flatten())
+    list_diff = np.nanmean(list1) - np.nanmean(list2)
+    list1_len = len(list1)
+    list2_len = len(list2)
+    list_total = np.array(list1+list2)
+    list_total_len = len(list_total)
+    diff_scores = []
+    for i in range(n_permutation):
+        list1_perm_idx = np.sort(np.random.choice(range(list_total_len), list1_len, replace=False))
+        list2_perm_idx = np.sort(list(set(range(list_total_len)).difference(set(list1_perm_idx))))
+        list1_perm = list_total[list1_perm_idx]
+        list2_perm = list_total[list2_perm_idx]
+        diff_scores.append(np.nanmean(list1_perm) - np.nanmean(list2_perm))
+    if tail == 'larger':
+        pvalue = 1.0*(np.sum(diff_scores>list_diff)+1)/(n_permutation+1)
+    elif tail == 'smaller':
+        pvalue = 1.0*(np.sum(diff_scores<list_diff)+1)/(n_permutation+1)
+    elif tail == 'both':
+        pvalue = 1.0*(np.sum(np.abs(diff_scores)>np.abs(list_diff))+1)/(n_permutation+1)
+    else:
+        raise Exception('Wrong paramters')
+    return list_diff, diff_scores, pvalue
+
+_,_,p = permutation_diff(NumPeakTp,FsPeakTp)
+
+
+
+
+
+
+
