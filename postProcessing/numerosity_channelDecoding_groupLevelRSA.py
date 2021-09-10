@@ -122,7 +122,7 @@ from statsmodels.stats.multitest import fdrcorrection
 #fdrcorrection(pvals, alpha=0.05, method='indep', is_sorted=False)
 def fdr(x):
     xx = fdrcorrection(x, alpha=0.05, method='indep', is_sorted=False)
-    return(xx)
+    return xx
 
 tps = 240 # time points = 80
 pAvgNum = np.zeros(tps)
@@ -149,7 +149,7 @@ if clusterCorrected == True: # May not right
     pAvgIs = clusterP(RDMpIs)
     pAvgShape = clusterP(RDMpShape)
 elif clusterCorrected == False:
-    # average cross different 
+    # average cross different subjects
     corrAvgNum = np.average(RDMcorrNum,axis=0)
     pAvgNum = np.average(RDMpNum,axis=0)
     corrAvgFs = np.average(RDMcorrFs,axis=0)
@@ -210,7 +210,7 @@ partialAvgAcc = np.average(data, axis=(2, 3, 4))
 import matplotlib.pyplot as plt
 partialAvgAcc = np.squeeze(partialAvgAcc)
 x = partialAvgAcc.shape
-plt.plot(range(-10,x[0]-10),partialAvgAcc)
+plt.plot(range(-30,x[0]-30),partialAvgAcc)
 plt.xlabel('Time points(10ms)')
 plt.ylabel('Decoding accuracy')
 plt.title('Pairwise decoding accuracy(average)')
