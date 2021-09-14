@@ -13,7 +13,7 @@ from sklearn.preprocessing import MinMaxScaler,StandardScaler
 from os.path import join as pj
 from neurora.stuff import clusterbased_permutation_1d_1samp_1sided as clusterP
 # load stimulus RDM
-eventMatrix = np.loadtxt(r'C:\Users\Clemens\Documents\GitHub\MEGAnalysis_Numerosity\postProcessing\STI.txt')
+eventMatrix = np.loadtxt(r'C:\Users\tclem\Documents\GitHub\MEGAnalysis_Numerosity\postProcessing\STI.txt')
 
 # make correlation matrix
 index = 0
@@ -53,7 +53,7 @@ for x in range(labelNum):
         
 #'004','005','006','007','009','011','012','013','014','015','016','017','018','019','020','021','022','023'
 subjs = ['004','005','006','007','009','011','012','013','014','015','016','017','018','019','020','021','022','023']
-path = 'D:/MEG/channelRDM/'
+path = r'E:\temp2'
 # make 4 dimension x 2 (r value and p value) empty matrix 
 subjNums, tps, RDM, fold, repeats = len(subjs), 240, 3160, 3, 100 # 3*80
 RDMcorrNum = np.zeros((subjNums,tps))
@@ -74,9 +74,9 @@ for subj in subjs:
     data = np.load(filePath) # subIndex,t,re,foldIndex,RDMindex 
     t,re,foldIndex,RDMindex = data.shape
     data = data.reshape(t*re*foldIndex,RDMindex)
-    # normalize the MEG RDM to [0,1]
-    #  scaler = StandardScaler()
-    #  data = scaler.fit_transform(data)
+    # normalize the MEG RDM
+    # scaler = StandardScaler()
+    # data = scaler.fit_transform(data)
     data = data.reshape(t,re,foldIndex,RDMindex)
     
     for tp in range(tps):
@@ -129,26 +129,23 @@ pAvgNum = np.zeros(tps)
 pAvgFs = np.zeros(tps)
 pAvgIs = np.zeros(tps)
 pAvgShape = np.zeros(tps)
-'''
-FDRCorrected = False
-if FDRCorrected == True: # May not right
-    corrAvgNum = np.average(RDMcorrNum,axis=0)
-    corrAvgFs = np.average(RDMcorrFs,axis=0)
-    corrAvgIs = np.average(RDMcorrIs,axis=0)
-    corrAvgShape = np.average(RDMcorrShape,axis=0)
+
+# correct the p value
+clusterCorrected = True #clusterP
+FDRCorrected =False
+noCorrection=False
+if clusterCorrected == True:
+    pAvgNum = clusterP(RDMpNum)
+    pAvgFs = clusterP(RDMpFs)
+    pAvgIs = clusterP(RDMpIs)
+    pAvgShape = clusterP(RDMpShape)
+elif FDRCorrected == True:
     for tp in range(tps):
         pAvgNum[tp] = np.average(fdr(RDMpNum[:,tp]))
         pAvgFs[tp] = np.average(fdr(RDMpFs[:,tp]))
         pAvgIs[tp] = np.average(fdr(RDMpIs[:,tp]))
         pAvgShape[tp] = np.average(fdr(RDMpShape[:,tp]))
-'''
-clusterCorrected = True #clusterP
-if clusterCorrected == True: # May not right
-    pAvgNum = clusterP(RDMpNum)
-    pAvgFs = clusterP(RDMpFs)
-    pAvgIs = clusterP(RDMpIs)
-    pAvgShape = clusterP(RDMpShape)
-elif clusterCorrected == False:
+elif noCorrection == True:
     # average cross different subjects
     corrAvgNum = np.average(RDMcorrNum,axis=0)
     pAvgNum = np.average(RDMpNum,axis=0)
@@ -222,17 +219,17 @@ NumPeakTp = np.zeros(len(subjs))
 FsOnsetTp = np.zeros(len(subjs))
 FsPeakTp = np.zeros(len(subjs))
 for sub in range(len(subjs)): #50~200ms, 15~30 * 3 tps
-    tp = np.where(RDMpNum[sub, 45:90]<0.05)
+    tp = np.where(RDMpNum[sub, 30:90]<0.05)
     NumOnsetTp[sub] = tp[0][0]
     NumPeakTp[sub] = np.where(RDMcorrNum[sub, 45:90] == np.max(RDMcorrNum[sub, 45:90]))[0]
     
-    tp = np.where(RDMpFs[sub, 45:90]<0.05)
+    tp = np.where(RDMpFs[sub, 30:90]<0.05)
     FsOnsetTp[sub] = tp[0][0]
     FsPeakTp[sub] = np.where(RDMcorrFs[sub, 45:90] == np.max(RDMcorrFs[sub, 45:90]))[0]
 
-NumOnsetTp = NumOnsetTp *3 + 50
+NumOnsetTp = NumOnsetTp *3 # + 50
 NumPeakTp = NumPeakTp *3 + 50
-FsOnsetTp = FsOnsetTp *3 + 50
+FsOnsetTp = FsOnsetTp *3 # + 50
 FsPeakTp = FsPeakTp *3 + 50
 
 import pandas as pd
@@ -251,7 +248,7 @@ plt.ylabel('Latency(ms)')
 plt.legend()
 plt.show()
 
-
+# stastic test 
 # main function of permutation
 def permutation_diff(list1, list2, n_permutation=10000, tail='both'):
     """
@@ -298,7 +295,9 @@ def permutation_diff(list1, list2, n_permutation=10000, tail='both'):
         raise Exception('Wrong paramters')
     return list_diff, diff_scores, pvalue
 
+# permutation test
 _,_,p = permutation_diff(NumPeakTp,FsPeakTp)
+_,_,p2 = permutation_diff(NumOnsetTp,FsOnsetTp)
 
 
 
