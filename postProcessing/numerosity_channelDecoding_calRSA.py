@@ -12,10 +12,10 @@ from sklearn.preprocessing import MinMaxScaler,StandardScaler
 import matplotlib.pyplot as plt
 import matplotlib
 #matplotlib.use('Qt5Agg')
-filePath = 'D:/MEG/channelRDM/ctfRDM3x100x300hz_subj013.npy'
+filePath = 'E:/temp2/ctfRDM3x100x300hz_subj023.npy'
 
 # make stimulus RDM
-eventMatrix =  np.loadtxt(r'C:\Users\Clemens\Documents\GitHub\MEGAnalysis_Numerosity\postProcessing\STI.txt')
+eventMatrix =  np.loadtxt(r'C:\Users\tclem\Documents\GitHub\MEGAnalysis_Numerosity\postProcessing\STI.txt')
 
 # make correlation matrix
 index = 0
@@ -54,11 +54,11 @@ for x in range(labelNum):
 # compute partial spearman correlation, with other 2 RDM controlled 
 data = np.load(filePath) # subIndex,t,re,foldIndex,RDMindex 
 t,re,foldIndex,RDMindex = data.shape
-data = data.reshape(t*re*foldIndex,RDMindex)
+# data = data.reshape(t*re*foldIndex,RDMindex)
 # normalize the MEG RDM to [0,1]
-scaler = StandardScaler()
-data = scaler.fit_transform(data)
-data = data.reshape(t,re,foldIndex,RDMindex)
+# scaler = StandardScaler()
+# data = scaler.fit_transform(data)
+# data = data.reshape(t,re,foldIndex,RDMindex)
 
 # make 3 x 2 empty matrix 
 tps, RDM, fold, repeats = data.shape

@@ -101,7 +101,8 @@ noCorrection=False
 for i in range(len(RDMName)):
     exec('avgCorr{} =np.average(RDMcorr{},axis=0)'.format(i,i))
     if clusterCorrected == True:
-        exec('avgP{} = clusterP(RDMp{})'.format(i,i))
+        exec('correctedP{} = clusterP(RDMcorr{})'.format(i,i))
+        exec('print(correctedP{})'.format(i))
 
 '''
 elif FDRCorrected == True:
@@ -116,7 +117,6 @@ elif noCorrection == True:
 
 color = ["Red", "Purple", "Gray",  "Blue", "Green", "Orange",  'brown']
 
-
 import matplotlib.pyplot as plt
 fig = plt.figure(figsize=(9,6),dpi=100)
 th = 0.05
@@ -125,12 +125,16 @@ thMinus = 0.01
 for i in range(len(RDMName)):
     exec('plt.plot((np.arange(-30,tps-30))/3,avgCorr{},label=RDMName[i],color=color[i])'.format(i))  
     # judge whether there are significant line
-    if not exec('(np.array(avgP{})<1).all()'.format(i)):
+    if not exec('(np.array(correctedP{})<1).all()'.format(i)):
         # plot the significant line
+        '''
         exec('avgP{}[(avgP{}>th)] = None'.format(i,i))
         exec('avgP{}[avgP{}<0] = None'.format(i,i))
         exec('avgP{}[(avgP{}<=th)] = thCorr-thMinus'.format(i,i))
-        exec('plt.plot((np.arange(-30,tps-30))/3,avgP{},color=color[i])'.format(i)) # range(-30,tps-30)
+        '''
+        exec('correctedP{}[(correctedP{}==0)] = None'.format(i,i))
+        exec('correctedP{}[(correctedP{}==1)] = thCorr-thMinus'.format(i,i))
+        exec('plt.plot((np.arange(-30,tps-30))/3,correctedP{},color=color[i])'.format(i)) # range(-30,tps-30)
         thMinus = thMinus + 0.01
 
 plt.xlabel('Time points(10ms)')

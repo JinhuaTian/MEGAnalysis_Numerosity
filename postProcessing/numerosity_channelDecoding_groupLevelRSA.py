@@ -9,11 +9,124 @@ import numpy as np
 #import pingouin as pg
 from pingouin import correlation as pg
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler,StandardScaler
+from sklearn.preprocessing import StandardScaler
 from os.path import join as pj
-from neurora.stuff import clusterbased_permutation_1d_1samp_1sided as clusterP
+#from neurora.stuff import clusterbased_permutation_1d_1samp_1sided as clusterP
 # load stimulus RDM
 eventMatrix = np.loadtxt(r'C:\Users\tclem\Documents\GitHub\MEGAnalysis_Numerosity\postProcessing\STI.txt')
+
+import scipy.stats as st
+def get_cluster_index_1d_1sided(m):
+
+    """
+    a function for getting the 1-D & 1-sided cluster-index information
+    Get 1-D & 1-sided cluster-index information from a vector
+    Parameters
+    ----------
+    m : array
+        A significant vector.
+        The values in m should be 0 or 1, which represent not significant point or significant point, respectively.
+
+    Returns
+    -------
+    index_v : array
+        The cluster-index vector.
+    index_n : int
+        The number of clusters.
+    """
+
+    x = np.shape(m)[0]
+    b = np.zeros([x+2])
+    b[1:x+1] = m
+
+    index_v = np.zeros([x])
+
+    index_n = 0
+    for i in range(x):
+        if b[i+1] == 1 and b[i] == 0 and b[i+2] == 1:
+            index_n = index_n + 1
+        if b[i+1] == 1:
+            if b[i] != 0 or b[i+2] != 0:
+                index_v[i] = index_n
+
+    return index_v, index_n
+
+def clusterbased_permutation(results, level=0, p_threshold=0.05, iter=5000):
+    """
+    1-sample & 1-sided cluster based permutation test for 2-D results
+
+    Parameters
+    ----------
+    results : array
+        A result matrix.
+        The shape of results should be [n_subs, x]. n_subs represents the number of subjects.
+    level : float. Default is 0.
+        A expected value in null hypothesis. (Here, results > level)
+    p_threshold : float. Default is 0.05.
+        The threshold of p-values.
+    iter : int. Default is 5000.
+        The times for iteration.
+
+    Returns
+    -------
+    ps : float
+        The permutation test resultz, p-values.
+        The shape of ps is [x]. The values in ps should be 0 or 1, which represent not significant point or significant
+        point after cluster-based permutation test, respectively.
+    """
+    nsubs, x = np.shape(results)
+
+    ps = np.zeros([x])
+    ts = np.zeros([x])
+    for t in range(x):
+        #ts[t], p = ttest_1samp(results[:, t], level, alternative='greater')
+        ts[t], p = st.wilcoxon(results[:, t]-level, zero_method='wilcox',
+                       correction=True, alternative='greater', mode='auto')
+        if p < p_threshold and ts[t] > 0:
+            ps[t] = 1
+        else:
+            ps[t] = 0
+
+    cluster_index, cluster_n = get_cluster_index_1d_1sided(ps)
+
+    if cluster_n != 0:
+        cluster_ts = np.zeros([cluster_n])
+        for i in range(cluster_n):
+            for t in range(x):
+                if cluster_index[t] == i + 1:
+                    cluster_ts[i] = cluster_ts[i] + ts[t]
+
+        permu_ts = np.zeros([iter])
+        chance = np.full([nsubs], level)
+        print("\nPermutation test")
+
+        for i in range(iter):
+            permu_cluster_ts = np.zeros([cluster_n])
+            for j in range(cluster_n):
+                for t in range(x):
+                    if cluster_index[t] == j + 1:
+                        v = np.hstack((results[:, t], chance))
+                        vshuffle = np.random.permutation(v)
+                        v1 = vshuffle[:nsubs]
+                        v2 = vshuffle[nsubs:]
+                        permu_cluster_ts[j] = permu_cluster_ts[j] + st.wilcoxon(v1, v2,
+                                                                                zero_method='wilcox',
+                                                                                correction=True,
+                                                                                alternative='greater',
+                                                                                mode='approx')[0]
+            permu_ts[i] = np.max(permu_cluster_ts)
+
+        for i in range(cluster_n):
+            index = 0
+            for j in range(iter):
+                if cluster_ts[i] > permu_ts[j]:
+                    index = index + 1
+            if index < iter * (1-p_threshold):
+                for t in range(x):
+                    if cluster_index[t] == i + 1:
+                        ps[t] = 0
+
+    return ps
 
 # make correlation matrix
 index = 0
