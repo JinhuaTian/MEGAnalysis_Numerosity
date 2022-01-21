@@ -12,6 +12,7 @@ from PIL import Image
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 #import torchvision.transforms as transforms
 from scipy.stats import pearsonr
+import matplotlib.pyplot as plt
 
 eventMatrix =  np.loadtxt('C:/Users/tclem/Documents/GitHub/MEGAnalysis_Numerosity/postProcessing/STI.txt')
 
@@ -60,7 +61,7 @@ for i in range(1,81):
 
 # make empty image matrix
 img = Image.open(pj(stiPath,imgs[0]))
-img = img.convert('L')
+img = img.convert('1') # should not use "L"
 # img.show()
 img = np.array(img)
 
@@ -108,24 +109,24 @@ def flip90_left(arr):
 '''
 
 # normalize RDM
-LLFRDM = normalization(LLFRDM) # full RDM
+# LLFRDM = normalization(LLFRDM) # no need to normalize data
 # nomalize RDM vector
 corrArray = normalization(corrArray) # LLF RDM vector, half of the RDM
 denRDM = normalization(denRDM)
 tfaRDM = normalization(tfaRDM)
 
-'''
+
 # plot LLF RDM
 import matplotlib.pyplot as plt
-fig = plt.figure(figsize=(8, 6), dpi=300) #调用figure创建一个绘图对象
+fig = plt.figure(figsize=(6, 6), dpi=300) #调用figure创建一个绘图对象
 ax = fig.add_subplot(111)
 cax = ax.matshow(LLFRDM, cmap='jet',vmin=0, vmax=1)  #绘制热力图，从-1到1  ,
 fig.colorbar(cax)  #cax将matshow生成热力图设置为颜色渐变条
 plt.title('Low-level feature RDM')
 plt.show()
-
+'''
 # plot TFA RDM
-fig = plt.figure(figsize=(8, 6), dpi=300) #调用figure创建一个绘图对象
+fig = plt.figure(figsize=(6, 6), dpi=300) #调用figure创建一个绘图对象
 ax = fig.add_subplot(111)
 cax = ax.matshow(TFARDM, cmap='jet',vmin=0, vmax=1)  #绘制热力图，从-1到1  ,
 fig.colorbar(cax)  #cax将matshow生成热力图设置为颜色渐变条
