@@ -14,9 +14,13 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 
+<<<<<<< Updated upstream
 plt.rcParams['font.sans-serif']=['SimHei']
 plt.rcParams['axes.unicode_minus']=False
 eventMatrix =  np.loadtxt('C:/Users/tclem/Documents/GitHub/MEGAnalysis_Numerosity/postProcessing/STI.txt')
+=======
+eventMatrix =  np.loadtxt('D:/MEG1/STI.txt')
+>>>>>>> Stashed changes
 
 # make correlation matrix
 index = 0
@@ -57,7 +61,11 @@ for x in range(labelNum):
         tfaRDM.append(abs(eventMatrix[x,2]*eventMatrix[x,0]-eventMatrix[y,2]*eventMatrix[y,0]))
             
 # calculate low-level feature
+<<<<<<< Updated upstream
 stiPath = r'D:\坚果云\我的坚果云\毕业论文\meg1\stim'
+=======
+stiPath = r'D:\MEG1\stim'
+>>>>>>> Stashed changes
 imgs = []
 for i in range(1,81):
     imgs.append(str(i)+'.png')
@@ -189,7 +197,11 @@ plt.show()
 # np.save('C:/Users/tclem/Desktop/MEG/LowLevelMatrix.npy',corrArray)
 
 modelRDM = np.array([numRDM,fsRDM,isRDM,shapeRDM,tfaRDM,denRDM,corrArray])
+<<<<<<< Updated upstream
 #np.save('E:/temp2/ModelRDM_NumFsIsShapeTfaDenLLF.npy',modelRDM) 
+=======
+np.save('D:/MEG1/ModelRDM_NumFsIsShapeTfaDenLLF.npy',modelRDM) 
+>>>>>>> Stashed changes
 
 
 
